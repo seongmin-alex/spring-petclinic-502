@@ -16,6 +16,17 @@ pipeline {
             }
         }
 
+        //Docker Hub
+
+
+
+
+
+
+
+
+
+        
         // Maven을 이용한 build
         stage('Maven Build') {
             steps {
@@ -61,5 +72,8 @@ nohup java -jar /home/ubuntu/spring-petclinic-4.0.0-SNAPSHOT.jar \
                 )
             }
         }
+
+        //Docker Image 삭제
+        
     }
 }
