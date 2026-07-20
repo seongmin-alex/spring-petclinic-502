@@ -78,7 +78,7 @@ pipeline {
 				sh '''
 					docker rmI -f spring-petclinic:$(BUILD_NUMBER}
 					docker rmi -f seongmino/spring-petclinic:latest
-				''',
+				'''
 	    }
 	}
   }
