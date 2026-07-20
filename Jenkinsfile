@@ -5,6 +5,9 @@ pipeline {
         maven "M3"
         jdk "JDK21"
     }
+    environment {
+        DOCKERHUB_CRED = credentials('dockerCredentials')
+    }
 
     stages {
 
@@ -15,17 +18,6 @@ pipeline {
                     branch: 'main'
             }
         }
-
-        //Docker Hub
-
-
-
-
-
-
-
-
-
         
         // Maven을 이용한 build
         stage('Maven Build') {
@@ -34,25 +26,38 @@ pipeline {
             }
         }
 
+        //Docker Images 생성
+        stage('Docker Image Create') {
+            steps {
+                sh '''
+                    docker build -t spring-petclinic:${BUILD_NUMBER} .
+                    docker tag spring-petclinic:${BUILD_NUMBER} seongmino/spring-petclinic:latest
+                '''
+            }
+        }
+
+        //Docker Image Push
+        stage('Docker Image Push') {
+            steps {
+                sh '''
+                    echo ${DOCKERHUB_CRED_PSW} | docker login -u ${DOCKERHUB_CRED_USR} --password-stdin
+                    docker push seongmino/spring-petclinic:latest
+                '''
+            }
+        }
+        
         // SSH를 이용한 파일 전송 및 실행
         stage('SSH Publish') {
             steps {
-                sshPublisher(
-                    publishers: [
-                        sshPublisherDesc(
-                            configName: 'target',
-                            transfers: [
-                                sshTransfer(
-                                    cleanRemote: false,
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'target',
+                            transfers: [sshTransfer(cleanRemote: false,
                                     excludes: '',
                                     execCommand: '''
-fuser -k 8080/tcp || true
-
-export BUILD_ID=PetClinic
-
-nohup java -jar /home/ubuntu/spring-petclinic-4.0.0-SNAPSHOT.jar \
->> /home/ubuntu/nohup.out 2>&1 &
-''',
+																		docker rm -f $(docker ps -aq)
+																		docker rmi -f $(docker images -q)
+																		docker run -itd -p 80:8080 --name=spring-petclinic seongmino/spring-petclinic:latest
+																		''',
+																	
                                     execTimeout: 120000,
                                     flatten: false,
                                     makeEmptyDirs: false,
@@ -61,19 +66,21 @@ nohup java -jar /home/ubuntu/spring-petclinic-4.0.0-SNAPSHOT.jar \
                                     remoteDirectory: '',
                                     remoteDirectorySDF: false,
                                     removePrefix: 'target',
-                                    sourceFiles: 'target/spring-petclinic-4.0.0-SNAPSHOT.jar'
-                                )
-                            ],
-                            usePromotionTimestamp: false,
-                            useWorkspaceInPromotion: false,
-                            verbose: false
-                        )
-                    ]
-                )
+                                    sourceFiles: 'target/spring-petclinic-4.0.0-SNAPSHOT.jar')],
+                            				usePromotionTimestamp: false,
+                            				useWorkspaceInPromotion: false,
+                            				verbose: false)])
             }
         }
 
         //Docker Image 삭제
-        
-    }
+        stage('Docker Image Remove') {
+					steps {
+						sh '''
+							docker rm -f $(docker ps -aq)
+							docker rmi -f $(docker images -q)
+						''',
+					}
+			}		
+  	}
 }
