@@ -16,7 +16,7 @@ pipeline {
               git url: 'https://github.com/seongmin-alex/spring-petclinic-502.git',
                   branch: 'main'
         }
-    }
+      }
         
       // Maven을 이용한 build
       stage('Maven Build') {
@@ -80,6 +80,6 @@ pipeline {
 					docker rmi -f seongmino/spring-petclinic:latest
 				'''
 	    }
-	}
+  	}
   }
 }
