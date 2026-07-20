@@ -76,8 +76,8 @@ pipeline {
     stage('Docker Image Remove') {
 			steps {
 				sh '''
-					docker rm -f $(docker ps -aq)
-					docker rmi -f $(docker images -q)
+					docker rmI -f spring-petclinic:$(BUILD_NUMBER}
+					docker rmi -f seongmino/spring-petclinic:latest
 				''',
 	      }
 	    }
